@@ -193,7 +193,8 @@
         </div>
     </div>
 
-    <a href="game.htm" class="fixed bottom-6 left-6 z-30 flex items-center justify-center group animate-float">
+    <!-- ปุ่มลิงก์ไปหน้าเกม (ชี้ไปที่ game.html) -->
+    <a href="game.html" class="fixed bottom-6 left-6 z-30 flex items-center justify-center group animate-float">
         <div class="absolute inset-0 bg-primary rounded-full blur opacity-40 group-hover:opacity-70 transition duration-300"></div>
         <div class="relative bg-gradient-to-br from-yellow-400 to-primary p-4 rounded-full shadow-2xl flex items-center justify-center border-2 border-white transform transition hover:scale-110">
             <i class="ph-fill ph-game-controller text-white text-3xl"></i>
@@ -204,21 +205,17 @@
     </a>
 
     <script>
-        // Data Structure for Menus (อัปเดตลิงก์รูปภาพใหม่)
         const menus = [
-            // Classic
             { id: 1, name: "กะเพราวากิวไข่ดาวกรอบ", price: 189, category: "classic", image: "https://images.unsplash.com/photo-1559314809-0d155014e29e?auto=format&fit=crop&q=80&w=800", ingredients: "เนื้อวากิวสับ, ใบกะเพราป่า, พริกแห้ง, กระเทียม, ไข่เป็ด", nutrition: { cal: 650, p: 45, c: 50, f: 28 }, badge: "Best Seller" },
             { id: 2, name: "หมูคุโรบูตะกระเทียมพริกไทย", price: 149, category: "classic", image: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&q=80&w=800", ingredients: "หมูคุโรบูตะ, กระเทียมเจียว, พริกไทยดำ, ซอสปรุงรสสูตรพิเศษ", nutrition: { cal: 580, p: 38, c: 45, f: 25 }, badge: null },
             { id: 3, name: "ข้าวผัดปูจัมโบ้", price: 229, category: "classic", image: "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&q=80&w=800", ingredients: "กรรเชียงปูม้า, ข้าวหอมมะลิเก่า, ไข่ไก่, ต้นหอม", nutrition: { cal: 520, p: 35, c: 60, f: 15 }, badge: "Premium" },
             { id: 4, name: "สุกี้แห้งทะเลศรีราชา", price: 159, category: "classic", image: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&q=80&w=800", ingredients: "กุ้ง, ปลาหมึก, วุ้นเส้น, ผักกาดขาว, น้ำจิ้มสุกี้สูตรศรีราชา", nutrition: { cal: 480, p: 30, c: 55, f: 12 }, badge: null },
             
-            // Fit & Firm
             { id: 5, name: "กะเพราอกไก่คีนัว", price: 129, category: "fit", image: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&q=80&w=800", ingredients: "อกไก่ลอกหนัง, คีนัวออร์แกนิค, ใบกะเพรา, พริกสด, น้ำมันมะกอก", nutrition: { cal: 380, p: 42, c: 35, f: 8 }, badge: "Low Cal" },
             { id: 6, name: "แซลมอนเทอริยากิข้าวกล้อง", price: 249, category: "fit", image: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&q=80&w=800", ingredients: "ปลาแซลมอนนอร์เวย์, ข้าวกล้องไรซ์เบอร์รี่, บร็อคโคลี่, ซอสเทอริยากิโซเดียมต่ำ", nutrition: { cal: 450, p: 38, c: 40, f: 16 }, badge: "High Protein" },
             { id: 7, name: "เต้าหู้เห็ดรวมผัดซอสเห็ดหอม", price: 119, category: "fit", image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800", ingredients: "เต้าหู้แข็ง, เห็ดชิเมจิ, เห็ดออรินจิ, ซอสเห็ดหอม", nutrition: { cal: 310, p: 18, c: 30, f: 12 }, badge: "Vegan" },
             { id: 8, name: "เนื้อสับผัดบร็อคโคลี่ลีน", price: 169, category: "fit", image: "https://images.unsplash.com/photo-1600891964092-4316c288032e?auto=format&fit=crop&q=80&w=800", ingredients: "เนื้อวัวลีนสับ, บร็อคโคลี่, กระเทียม, ซีอิ๊วลดโซเดียม", nutrition: { cal: 410, p: 40, c: 20, f: 18 }, badge: null },
             
-            // Fusion
             { id: 9, name: "สปาเก็ตตี้ต้มยำทะเลแห้ง", price: 179, category: "fusion", image: "https://images.unsplash.com/photo-1556761223-4c4282c73f77?auto=format&fit=crop&q=80&w=800", ingredients: "เส้นสปาเก็ตตี้, กุ้ง, ปลาหมึก, เครื่องต้มยำ, นมข้นจืด", nutrition: { cal: 550, p: 32, c: 65, f: 18 }, badge: "Signature" },
             { id: 10, name: "หมูสามชั้นผัดซอสหม่าล่า", price: 159, category: "fusion", image: "https://images.unsplash.com/photo-1544025162-8366fd06aca1?auto=format&fit=crop&q=80&w=800", ingredients: "หมูสามชั้นสไลด์, พริกหม่าล่า, ต้นหอมญี่ปุ่น, งาขาว", nutrition: { cal: 680, p: 25, c: 30, f: 45 }, badge: "Spicy!" },
             { id: 11, name: "ข้าวผัดแกงเขียวหวานไก่กรอบ", price: 149, category: "fusion", image: "https://images.unsplash.com/photo-1565557623262-b51c2513a641?auto=format&fit=crop&q=80&w=800", ingredients: "ข้าวหอมมะลิ, พริกแกงเขียวหวาน, ไก่ทอดกรอบ, โหระพา", nutrition: { cal: 620, p: 35, c: 55, f: 28 }, badge: null },
@@ -226,14 +223,11 @@
         ];
 
         let cart = [];
-        let discountRate = 0; // 0.15 for 15% off, etc.
+        let discountRate = 0;
         let discountAmount = 0;
         let isPromoApplied = false;
 
-        // Fallback Image URL Generator (เปลี่ยนรูปสำรองให้เป็นรูปอาหารมาตรฐานแทนภาพสีพื้น)
         const getFallbackImg = () => "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=800";
-
-        // Render Menu Cards
 
         function saveCart() {
             localStorage.setItem('wokify_cart', JSON.stringify(cart));
