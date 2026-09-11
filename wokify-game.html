@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Wok Master Game | WOKIFY</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#FF6B35',
+                        secondary: '#2B2D42',
+                        accent: '#8ACB88',
+                    },
+                    fontFamily: { sans: ['Prompt', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { margin: 0; overflow: hidden; touch-action: none; background-color: #2B2D42; }
+        #gameCanvas { display: block; width: 100%; height: 100vh; }
+        .overlay { backdrop-filter: blur(5px); }
+    </style>
+</head>
+<body class="font-sans text-white select-none">
+
+    <!-- Header UI -->
+    <div class="fixed top-0 left-0 w-full p-4 flex justify-between items-center z-10 pointer-events-none">
+        <a href="wokify.html" class="pointer-events-auto bg-white text-secondary hover:bg-primary hover:text-white shadow-[0_4px_15px_rgba(0,0,0,0.3)] px-4 py-2 rounded-full flex items-center text-sm font-bold transition-all transform hover:scale-105 border-2 border-transparent">
+            <i class="ph-bold ph-arrow-left mr-2"></i> กลับหน้าร้าน
+        </a>
+        <div class="flex gap-4 bg-black/40 backdrop-blur-md px-5 py-2 rounded-full border border-white/10">
+            <div class="font-bold"><span class="text-gray-400 text-xs uppercase block leading-none">Score</span><span id="scoreUI" class="text-primary text-xl">0</span><span class="text-xs">/500</span></div>
+            <div class="font-bold"><span class="text-gray-400 text-xs uppercase block leading-none">Lives</span><span id="livesUI" class="text-red-400 text-xl">❤️❤️❤️</span></div>
+        </div>
+    </div>
+
+    <!-- Start Screen -->
+    <div id="startScreen" class="fixed inset-0 z-20 flex items-center justify-center bg-secondary/90 overlay flex-col px-4 text-center">
+        <div class="text-6xl mb-4">🥘</div>
+        <h1 class="text-4xl font-bold text-white mb-2">Wok Master</h1>
+        <p class="text-gray-300 mb-6 max-w-sm">เลื่อนกระทะเพื่อรับวัตถุดิบคุณภาพ <br>เก็บให้ครบ 500 คะแนนเพื่อรับ Code ส่วนลด!<br><span class="text-red-400 text-sm">(ระวังของเสียจะทำให้เสียพลังชีวิต)</span></p>
+        <div class="flex gap-4 mb-8 text-2xl">
+            <div class="bg-white/10 p-3 rounded-xl border border-white/20 text-center"><span class="block text-accent text-sm mb-1">Good</span>🥩 🌿 🌶️</div>
+            <div class="bg-white/10 p-3 rounded-xl border border-white/20 text-center"><span class="block text-red-400 text-sm mb-1">Bad</span>🪲 🗑️</div>
+        </div>
+        <button onclick="startGame()" class="bg-primary hover:bg-orange-500 text-white font-bold py-3 px-10 rounded-full shadow-[0_0_20px_rgba(255,107,53,0.5)] text-lg transition transform hover:scale-105">เริ่มเล่นเลย!</button>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="gameOverScreen" class="fixed inset-0 z-20 hidden items-center justify-center bg-black/90 overlay flex-col px-4 text-center">
+        <h2 class="text-4xl font-bold text-red-500 mb-2">Game Over!</h2>
+        <p class="text-gray-300 mb-6">กระทะไหม้ซะแล้ว! พยายามใหม่อีกครั้งนะ</p>
+        <button onclick="resetGame()" class="bg-white text-secondary hover:bg-gray-200 font-bold py-3 px-10 rounded-full transition mb-4">เล่นอีกครั้ง</button>
+        <a href="wokify.html" class="text-sm text-gray-400 underline">กลับหน้าร้าน</a>
+    </div>
+
+    <!-- Win Screen (Promo Code) -->
+    <div id="winScreen" class="fixed inset-0 z-20 hidden items-center justify-center bg-secondary/95 overlay flex-col px-4 text-center">
+        <div class="text-6xl mb-4 animate-bounce">🎉</div>
+        <h2 class="text-4xl font-bold text-accent mb-2">Mission Cleared!</h2>
+        <p class="text-gray-200 mb-6">ยินดีด้วย! คุณคือ Wok Master<br>รับโค้ดส่วนลด 50 บาท ไปใช้อิ่มอร่อยได้เลย</p>
+        
+        <div class="bg-white p-6 rounded-2xl w-full max-w-sm border-4 border-accent relative overflow-hidden mb-8 shadow-[0_0_30px_rgba(138,203,136,0.3)]">
+            <div class="absolute -right-4 -top-4 w-16 h-16 bg-accent rotate-45"></div>
+            <p class="text-gray-500 text-sm font-bold uppercase mb-2">Promo Code</p>
+            <div class="flex items-center justify-between bg-gray-100 rounded-lg p-3">
+                <span id="promoCode" class="text-2xl font-mono font-bold text-secondary tracking-widest">WOKWIN50</span>
+                <button onclick="copyCode()" class="bg-secondary text-white p-2 rounded hover:bg-black transition active:scale-95 text-sm flex items-center gap-1">
+                    <i class="ph ph-copy"></i> Copy
+                </button>
+            </div>
+            <p id="copyMsg" class="text-accent text-xs mt-2 font-semibold opacity-0 transition-opacity">คัดลอกโค้ดแล้ว!</p>
+        </div>
+
+        <a href="wokify.html" class="bg-primary hover:bg-orange-500 text-white font-bold py-3 px-8 rounded-full transition flex items-center gap-2">
+            <i class="ph ph-shopping-bag text-xl"></i> นำโค้ดไปใช้สั่งอาหาร
+        </a>
+    </div>
+
+    <!-- Canvas -->
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Resize Canvas to fit screen
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Game State Variables
+        let gameLoop;
+        let isPlaying = false;
+        let score = 0;
+        let lives = 3;
+        const targetScore = 500;
+
+        // Player (Wok)
+        const player = {
+            x: canvas.width / 2,
+            y: canvas.height - 100,
+            width: 80,
+            height: 50,
+            speed: 0,
+            emoji: '🥘'
+        };
+
+        // Items Array
+        let items = [];
+        const itemTypes = [
+            { emoji: '🥩', type: 'good', points: 20 },
+            { emoji: '🌿', type: 'good', points: 15 },
+            { emoji: '🌶️', type: 'good', points: 30 },
+            { emoji: '🪲', type: 'bad', damage: 1 },
+            { emoji: '🗑️', type: 'bad', damage: 1 }
+        ];
+
+        // Input handling (Touch & Mouse)
+        let targetX = canvas.width / 2;
+        
+        function updatePlayerPosition(e) {
+            if (!isPlaying) return;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            targetX = clientX;
+        }
+
+        window.addEventListener('mousemove', updatePlayerPosition);
+        window.addEventListener('touchmove', updatePlayerPosition, {passive: false});
+
+        function spawnItem() {
+            if (!isPlaying) return;
+            
+            // Spawn rate gets slightly faster based on score
+            const spawnRate = Math.max(800 - (score * 1.5), 300); 
+            
+            const randomType = itemTypes[Math.floor(Math.random() * itemTypes.length)];
+            const size = 40;
+            items.push({
+                x: Math.random() * (canvas.width - size),
+                y: -50,
+                size: size,
+                data: randomType,
+                speed: Math.random() * 3 + 2 + (score/200) // Speed increases slightly
+            });
+
+            setTimeout(spawnItem, spawnRate);
+        }
+
+        function update() {
+            if (!isPlaying) return;
+
+            // Smooth player movement
+            player.x += (targetX - player.x) * 0.15;
+            
+            // Boundary constraints
+            if (player.x < player.width/2) player.x = player.width/2;
+            if (player.x > canvas.width - player.width/2) player.x = canvas.width - player.width/2;
+
+            // Update Items
+            for (let i = items.length - 1; i >= 0; i--) {
+                const item = items[i];
+                item.y += item.speed;
+
+                // Collision Detection (Circle vs Rect approx)
+                const hitboxY = player.y - 20; // Top rim of the wok
+                if (item.y + item.size/2 > hitboxY && item.y < player.y + player.height) {
+                    if (Math.abs(item.x - player.x) < player.width / 1.5) {
+                        // Caught!
+                        if (item.data.type === 'good') {
+                            score += item.data.points;
+                            createParticles(item.x, item.y, '#8ACB88');
+                        } else {
+                            lives -= item.data.damage;
+                            createParticles(item.x, item.y, '#EF4444');
+                            // Shake effect on canvas
+                            canvas.style.transform = `translate(${Math.random()*10-5}px, ${Math.random()*10-5}px)`;
+                            setTimeout(() => canvas.style.transform = 'none', 100);
+                        }
+                        items.splice(i, 1);
+                        updateUI();
+                        checkWinLoss();
+                        continue;
+                    }
+                }
+
+                // Remove if out of bounds
+                if (item.y > canvas.height) {
+                    items.splice(i, 1);
+                }
+            }
+        }
+
+        // Simple Particle System for visual feedback
+        let particles = [];
+        function createParticles(x, y, color) {
+            for(let i=0; i<5; i++) {
+                particles.push({
+                    x: x, y: y,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10,
+                    life: 1,
+                    color: color
+                });
+            }
+        }
+
+        function draw() {
+            // Clear Canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw subtle background grid or effects (optional, keeping it simple for perf)
+            
+            // Draw Particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 5, 0, Math.PI*2);
+                ctx.fill();
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.05;
+                if(p.life <= 0) particles.splice(i, 1);
+            }
+            ctx.globalAlpha = 1;
+
+            // Draw Items
+            ctx.font = '40px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            items.forEach(item => {
+                ctx.fillText(item.data.emoji, item.x, item.y);
+            });
+
+            // Draw Player (Wok)
+            ctx.font = '60px sans-serif';
+            ctx.fillText(player.emoji, player.x, player.y);
+        }
+
+        function loop() {
+            update();
+            draw();
+            if(isPlaying) requestAnimationFrame(loop);
+        }
+
+        function updateUI() {
+            document.getElementById('scoreUI').innerText = score;
+            let heartStr = '';
+            for(let i=0; i<lives; i++) heartStr += '❤️';
+            document.getElementById('livesUI').innerText = heartStr || '💔';
+        }
+
+        function checkWinLoss() {
+            if (lives <= 0) {
+                isPlaying = false;
+                document.getElementById('gameOverScreen').style.display = 'flex';
+            } else if (score >= targetScore) {
+                isPlaying = false;
+                score = targetScore; // Cap UI
+                updateUI();
+                document.getElementById('winScreen').style.display = 'flex';
+                shootConfetti(); // Optional extra flair
+            }
+        }
+
+        function startGame() {
+            document.getElementById('startScreen').style.display = 'none';
+            player.y = canvas.height - 100;
+            isPlaying = true;
+            score = 0;
+            lives = 3;
+            items = [];
+            particles = [];
+            updateUI();
+            spawnItem();
+            loop();
+        }
+
+        function resetGame() {
+            document.getElementById('gameOverScreen').style.display = 'none';
+            startGame();
+        }
+
+        function copyCode() {
+            const code = document.getElementById('promoCode').innerText;
+            // Fake clipboard copy since iFrame restrictions might block real clipboard API
+            const dummy = document.createElement("textarea");
+            document.body.appendChild(dummy);
+            dummy.value = code;
+            dummy.select();
+            document.execCommand("copy");
+            document.body.removeChild(dummy);
+            
+            const msg = document.getElementById('copyMsg');
+            msg.style.opacity = '1';
+            setTimeout(() => { msg.style.opacity = '0'; }, 2000);
+        }
+
+        // Simple Confetti effect for Win Screen (pure canvas)
+        function shootConfetti() {
+            for(let i=0; i<50; i++) {
+                particles.push({
+                    x: canvas.width/2, y: canvas.height/2,
+                    vx: (Math.random() - 0.5) * 20,
+                    vy: (Math.random() - 1) * 20,
+                    life: 1 + Math.random(),
+                    color: ['#FF6B35', '#8ACB88', '#FFD166', '#EF476F'][Math.floor(Math.random()*4)]
+                });
+            }
+            if(!isPlaying) { // If loop stopped, start a temporary one for confetti
+                function confettiloop() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    for (let i = particles.length - 1; i >= 0; i--) {
+                        const p = particles[i];
+                        ctx.globalAlpha = p.life > 1 ? 1 : p.life;
+                        ctx.fillStyle = p.color;
+                        ctx.fillRect(p.x, p.y, 8, 8);
+                        p.x += p.vx;
+                        p.y += p.vy;
+                        p.vy += 0.5; // gravity
+                        p.life -= 0.02;
+                        if(p.life <= 0) particles.splice(i, 1);
+                    }
+                    if(particles.length > 0) requestAnimationFrame(confettiloop);
+                    else ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+                confettiloop();
+            }
+        }
+    </script>
+</body>
+</html>
