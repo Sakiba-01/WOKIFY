@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Wok Master Game | WOKIFY</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WOKIFY | Your Craving, Wokified.</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script>
         tailwind.config = {
@@ -15,329 +15,633 @@
                         primary: '#FF6B35',
                         secondary: '#2B2D42',
                         accent: '#8ACB88',
+                        light: '#F8F9FA'
                     },
-                    fontFamily: { sans: ['Prompt', 'sans-serif'] }
+                    fontFamily: {
+                        sans: ['Prompt', 'sans-serif'],
+                    }
                 }
             }
         }
     </script>
     <style>
-        body { margin: 0; overflow: hidden; touch-action: none; background-color: #2B2D42; }
-        #gameCanvas { display: block; width: 100%; height: 100vh; }
-        .overlay { backdrop-filter: blur(5px); }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .modal-enter { opacity: 0; transform: scale(0.9); }
+        .modal-enter-active { opacity: 1; transform: scale(1); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .modal-exit { opacity: 1; transform: scale(1); }
+        .modal-exit-active { opacity: 0; transform: scale(0.9); transition: all 0.2s ease-in; }
+        
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .animate-float { animation: float 3s ease-in-out infinite; }
     </style>
 </head>
-<body class="font-sans text-white select-none">
+<body class="bg-light text-secondary font-sans antialiased overflow-x-hidden">
 
-    <!-- Header UI -->
-    <div class="fixed top-0 left-0 w-full p-4 flex justify-between items-center z-10 pointer-events-none">
-        <a href="wokify.html" class="pointer-events-auto bg-white text-secondary hover:bg-primary hover:text-white shadow-[0_4px_15px_rgba(0,0,0,0.3)] px-4 py-2 rounded-full flex items-center text-sm font-bold transition-all transform hover:scale-105 border-2 border-transparent">
-            <i class="ph-bold ph-arrow-left mr-2"></i> กลับหน้าร้าน
-        </a>
-        <div class="flex gap-4 bg-black/40 backdrop-blur-md px-5 py-2 rounded-full border border-white/10">
-            <div class="font-bold"><span class="text-gray-400 text-xs uppercase block leading-none">Score</span><span id="scoreUI" class="text-primary text-xl">0</span><span class="text-xs">/500</span></div>
-            <div class="font-bold"><span class="text-gray-400 text-xs uppercase block leading-none">Lives</span><span id="livesUI" class="text-red-400 text-xl">❤️❤️❤️</span></div>
-        </div>
-    </div>
-
-    <!-- Start Screen -->
-    <div id="startScreen" class="fixed inset-0 z-20 flex items-center justify-center bg-secondary/90 overlay flex-col px-4 text-center">
-        <div class="text-6xl mb-4">🥘</div>
-        <h1 class="text-4xl font-bold text-white mb-2">Wok Master</h1>
-        <p class="text-gray-300 mb-6 max-w-sm">เลื่อนกระทะเพื่อรับวัตถุดิบคุณภาพ <br>เก็บให้ครบ 500 คะแนนเพื่อรับ Code ส่วนลด!<br><span class="text-red-400 text-sm">(ระวังของเสียจะทำให้เสียพลังชีวิต)</span></p>
-        <div class="flex gap-4 mb-8 text-2xl">
-            <div class="bg-white/10 p-3 rounded-xl border border-white/20 text-center"><span class="block text-accent text-sm mb-1">Good</span>🥩 🌿 🌶️</div>
-            <div class="bg-white/10 p-3 rounded-xl border border-white/20 text-center"><span class="block text-red-400 text-sm mb-1">Bad</span>🪲 🗑️</div>
-        </div>
-        <button onclick="startGame()" class="bg-primary hover:bg-orange-500 text-white font-bold py-3 px-10 rounded-full shadow-[0_0_20px_rgba(255,107,53,0.5)] text-lg transition transform hover:scale-105">เริ่มเล่นเลย!</button>
-    </div>
-
-    <!-- Game Over Screen -->
-    <div id="gameOverScreen" class="fixed inset-0 z-20 hidden items-center justify-center bg-black/90 overlay flex-col px-4 text-center">
-        <h2 class="text-4xl font-bold text-red-500 mb-2">Game Over!</h2>
-        <p class="text-gray-300 mb-6">กระทะไหม้ซะแล้ว! พยายามใหม่อีกครั้งนะ</p>
-        <button onclick="resetGame()" class="bg-white text-secondary hover:bg-gray-200 font-bold py-3 px-10 rounded-full transition mb-4">เล่นอีกครั้ง</button>
-        <a href="wokify.html" class="text-sm text-gray-400 underline">กลับหน้าร้าน</a>
-    </div>
-
-    <!-- Win Screen (Promo Code) -->
-    <div id="winScreen" class="fixed inset-0 z-20 hidden items-center justify-center bg-secondary/95 overlay flex-col px-4 text-center">
-        <div class="text-6xl mb-4 animate-bounce">🎉</div>
-        <h2 class="text-4xl font-bold text-accent mb-2">Mission Cleared!</h2>
-        <p class="text-gray-200 mb-6">ยินดีด้วย! คุณคือ Wok Master<br>รับโค้ดส่วนลด 50 บาท ไปใช้อิ่มอร่อยได้เลย</p>
-        
-        <div class="bg-white p-6 rounded-2xl w-full max-w-sm border-4 border-accent relative overflow-hidden mb-8 shadow-[0_0_30px_rgba(138,203,136,0.3)]">
-            <div class="absolute -right-4 -top-4 w-16 h-16 bg-accent rotate-45"></div>
-            <p class="text-gray-500 text-sm font-bold uppercase mb-2">Promo Code</p>
-            <div class="flex items-center justify-between bg-gray-100 rounded-lg p-3">
-                <span id="promoCode" class="text-2xl font-mono font-bold text-secondary tracking-widest">WOKWIN50</span>
-                <button onclick="copyCode()" class="bg-secondary text-white p-2 rounded hover:bg-black transition active:scale-95 text-sm flex items-center gap-1">
-                    <i class="ph ph-copy"></i> Copy
-                </button>
+    <nav class="bg-white shadow-sm sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20">
+                <div class="flex items-center cursor-pointer" onclick="window.scrollTo(0,0)">
+                    <i class="ph ph-cooking-pot text-primary text-4xl mr-2"></i>
+                    <span class="font-bold text-2xl tracking-tight text-secondary">WOK<span class="text-primary">IFY</span></span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button onclick="toggleModal('aiModal')" class="flex items-center text-sm font-medium text-white bg-gradient-to-r from-purple-500 to-indigo-500 px-4 py-2 rounded-full shadow hover:shadow-lg transition">
+                        <i class="ph-fill ph-magic-wand mr-2"></i> AI แนะนำ
+                    </button>
+                    <button onclick="toggleCart()" class="relative p-2 text-secondary hover:text-primary transition">
+                        <i class="ph ph-shopping-cart text-3xl"></i>
+                        <span id="cartBadge" class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/4 -translate-y-1/4 bg-primary rounded-full hidden">0</span>
+                    </button>
+                </div>
             </div>
-            <p id="copyMsg" class="text-accent text-xs mt-2 font-semibold opacity-0 transition-opacity">คัดลอกโค้ดแล้ว!</p>
         </div>
+    </nav>
 
-        <a href="wokify.html" class="bg-primary hover:bg-orange-500 text-white font-bold py-3 px-8 rounded-full transition flex items-center gap-2">
-            <i class="ph ph-shopping-bag text-xl"></i> นำโค้ดไปใช้สั่งอาหาร
-        </a>
+    <div class="relative bg-secondary overflow-hidden">
+        <div class="absolute inset-0">
+            <img src="https://images.unsplash.com/photo-1552611052-33e04de081de?auto=format&fit=crop&q=80&w=2000" class="w-full h-full object-cover opacity-20" alt="Wok fire background">
+        </div>
+        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32 flex flex-col items-center text-center">
+            <span class="px-3 py-1 bg-primary/20 text-primary rounded-full text-sm font-semibold mb-4 border border-primary/30">Your Craving, Wokified.</span>
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6">ยกระดับอาหารตามสั่ง<br><span class="text-primary">ในสไตล์คุณ</span></h1>
+            <p class="text-lg text-gray-300 max-w-2xl mb-10">จัดจ้านถึงใจ วัตถุดิบพรีเมียม พร้อมบอกข้อมูลโภชนาการครบถ้วน ให้คุณอร่อยได้อย่างมั่นใจในทุกมื้อ</p>
+            <a href="#menu-section" class="bg-primary hover:bg-orange-600 text-white font-semibold py-3 px-8 rounded-full shadow-lg shadow-primary/30 transition transform hover:-translate-y-1">สั่งอาหารเลย</a>
+        </div>
     </div>
 
-    <!-- Canvas -->
-    <canvas id="gameCanvas"></canvas>
+    <main id="menu-section" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl font-bold text-secondary mb-4">เมนูยอดฮิต</h2>
+            <div class="flex flex-wrap justify-center gap-3 mt-8">
+                <button onclick="renderMenu('all')" class="filter-btn active px-5 py-2 rounded-full border border-gray-300 text-gray-600 hover:border-primary hover:text-primary transition bg-white data-[active=true]:bg-primary data-[active=true]:text-white data-[active=true]:border-primary" data-filter="all" data-active="true">ทั้งหมด</button>
+                <button onclick="renderMenu('classic')" class="filter-btn px-5 py-2 rounded-full border border-gray-300 text-gray-600 hover:border-primary hover:text-primary transition bg-white" data-filter="classic">👑 The Classics Reborn</button>
+                <button onclick="renderMenu('fit')" class="filter-btn px-5 py-2 rounded-full border border-gray-300 text-gray-600 hover:border-primary hover:text-primary transition bg-white" data-filter="fit">💪 Fit & Firm</button>
+                <button onclick="renderMenu('fusion')" class="filter-btn px-5 py-2 rounded-full border border-gray-300 text-gray-600 hover:border-primary hover:text-primary transition bg-white" data-filter="fusion">🌶️ Fusion Wok</button>
+            </div>
+        </div>
+
+        <div id="menuGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- Menu cards injected here -->
+        </div>
+    </main>
+
+    <div id="cartOverlay" class="fixed inset-0 bg-black/50 z-40 hidden opacity-0 transition-opacity duration-300" onclick="toggleCart()"></div>
+    
+    <div id="cartSidebar" class="fixed top-0 right-0 h-full w-full sm:w-96 bg-white shadow-2xl z-50 transform translate-x-full transition-transform duration-300 flex flex-col">
+        <div class="p-4 border-b flex justify-between items-center bg-secondary text-white">
+            <h2 class="text-xl font-bold flex items-center"><i class="ph ph-shopping-bag mr-2"></i> ตะกร้าของคุณ</h2>
+            <div class="flex items-center gap-3">
+                <button onclick="clearCartConfirm()" id="clearCartBtn" class="text-xs text-red-300 hover:text-red-100 hidden transition underline">ล้างตะกร้า</button>
+                <button onclick="toggleCart()" class="text-gray-300 hover:text-white transition"><i class="ph ph-x text-2xl"></i></button>
+            </div>
+        </div>
+        
+        <div id="cartItems" class="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+            <div id="emptyCart" class="text-center text-gray-500 mt-10">
+                <i class="ph ph-shopping-cart text-5xl mb-3 text-gray-300"></i>
+                <p>ตะกร้ายังว่างอยู่เลย <br>มาเติมความอร่อยกันเถอะ!</p>
+            </div>
+        </div>
+
+        <div class="p-4 border-t bg-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+            <div class="mb-4">
+                <label class="block text-xs font-medium text-gray-700 mb-1">Promo Code (เช่น WOKWIN50)</label>
+                <div class="flex gap-2">
+                    <input type="text" id="promoInput" placeholder="ใส่โค้ดส่วนลด" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary uppercase">
+                    <button onclick="applyPromo()" class="bg-secondary text-white px-4 py-2 rounded-lg text-sm hover:bg-black transition whitespace-nowrap">ใช้โค้ด</button>
+                </div>
+                <p id="promoMessage" class="text-xs mt-1 hidden"></p>
+            </div>
+
+            <div class="space-y-2 mb-4 text-sm">
+                <div class="flex justify-between text-gray-600"><span>ยอดรวม</span><span id="cartSubtotal">฿0</span></div>
+                <div id="discountRow" class="flex justify-between text-accent font-medium hidden"><span>ส่วนลด</span><span id="cartDiscount">-฿0</span></div>
+                <div class="flex justify-between font-bold text-lg text-secondary border-t pt-2"><span>ยอดสุทธิ</span><span id="cartTotal">฿0</span></div>
+            </div>
+            <button onclick="checkout()" id="checkoutBtn" class="w-full bg-primary hover:bg-orange-600 text-white font-bold py-3 rounded-xl shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>ชำระเงิน</button>
+        </div>
+    </div>
+
+    <div id="receiptModal" class="fixed inset-0 z-50 hidden flex items-center justify-center">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeModal('receiptModal')"></div>
+        <div class="relative bg-white rounded-2xl w-full max-w-md mx-4 p-6 shadow-2xl modal-enter max-h-[90vh] overflow-y-auto" id="receiptContent">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="ph ph-check-circle text-4xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-secondary">สั่งอาหารสำเร็จ!</h3>
+                <p class="text-gray-500 text-sm mt-1">ออเดอร์ #<span id="orderNumber" class="font-mono"></span></p>
+            </div>
+            
+            <div class="border-t border-b border-dashed border-gray-300 py-4 mb-6">
+                <div id="receiptItems" class="space-y-3 mb-4 text-sm text-gray-600">
+                    <!-- Receipt items injected here -->
+                </div>
+                <div class="border-t border-gray-100 pt-3 space-y-1 text-sm">
+                    <div class="flex justify-between"><span>ยอดรวม</span><span id="receiptSubtotal"></span></div>
+                    <div id="receiptDiscountRow" class="flex justify-between text-accent hidden"><span>ส่วนลด</span><span id="receiptDiscount"></span></div>
+                    <div class="flex justify-between font-bold text-lg text-secondary mt-2"><span>ยอดสุทธิ</span><span id="receiptTotal"></span></div>
+                </div>
+            </div>
+            
+            <button onclick="closeModal('receiptModal'); resetCart();" class="w-full bg-secondary hover:bg-black text-white font-semibold py-3 rounded-xl transition">กลับหน้าแรก</button>
+        </div>
+    </div>
+
+    <div id="aiModal" class="fixed inset-0 z-50 hidden flex items-center justify-center">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeModal('aiModal')"></div>
+        <div class="relative bg-white rounded-2xl w-full max-w-lg mx-4 overflow-hidden shadow-2xl modal-enter" id="aiContent">
+            <div class="bg-gradient-to-r from-purple-600 to-indigo-600 p-6 text-white text-center">
+                <i class="ph-fill ph-robot text-5xl mb-2 animate-bounce"></i>
+                <h3 class="text-2xl font-bold">Wokify AI Assistant</h3>
+                <p class="text-purple-100 text-sm mt-1">วันนี้คุณอยากทานอาหารแนวไหนครับ?</p>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-3 gap-3 mb-6">
+                    <button onclick="askAI('health')" class="flex flex-col items-center justify-center p-3 rounded-xl border-2 border-gray-100 hover:border-accent hover:bg-green-50 transition group">
+                        <i class="ph-fill ph-plant text-3xl text-gray-400 group-hover:text-accent mb-2"></i>
+                        <span class="text-sm font-medium text-gray-600 group-hover:text-accent">สายสุขภาพ</span>
+                    </button>
+                    <button onclick="askAI('spicy')" class="flex flex-col items-center justify-center p-3 rounded-xl border-2 border-gray-100 hover:border-red-500 hover:bg-red-50 transition group">
+                        <i class="ph-fill ph-fire text-3xl text-gray-400 group-hover:text-red-500 mb-2"></i>
+                        <span class="text-sm font-medium text-gray-600 group-hover:text-red-500">รสจัดจ้าน</span>
+                    </button>
+                    <button onclick="askAI('fusion')" class="flex flex-col items-center justify-center p-3 rounded-xl border-2 border-gray-100 hover:border-purple-500 hover:bg-purple-50 transition group">
+                        <i class="ph-fill ph-sparkle text-3xl text-gray-400 group-hover:text-purple-500 mb-2"></i>
+                        <span class="text-sm font-medium text-gray-600 group-hover:text-purple-500">แปลกใหม่</span>
+                    </button>
+                </div>
+                
+                <div id="aiResult" class="hidden bg-gray-50 rounded-xl p-4 border border-gray-200">
+                    <p class="text-sm text-gray-500 mb-3" id="aiReason"></p>
+                    <div id="aiMenuCard" class="flex gap-4 items-center bg-white p-3 rounded-lg shadow-sm">
+                        <!-- AI recommendation injected here -->
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 border-t bg-gray-50 text-right">
+                <button onclick="closeModal('aiModal')" class="text-gray-500 hover:text-gray-700 font-medium px-4 py-2">ปิด</button>
+            </div>
+        </div>
+    </div>
+
+    <a href="game.htm" class="fixed bottom-6 left-6 z-30 flex items-center justify-center group animate-float">
+        <div class="absolute inset-0 bg-primary rounded-full blur opacity-40 group-hover:opacity-70 transition duration-300"></div>
+        <div class="relative bg-gradient-to-br from-yellow-400 to-primary p-4 rounded-full shadow-2xl flex items-center justify-center border-2 border-white transform transition hover:scale-110">
+            <i class="ph-fill ph-game-controller text-white text-3xl"></i>
+            <div class="absolute left-full ml-3 bg-white px-3 py-1.5 rounded-lg shadow-md text-xs font-bold text-primary whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none before:content-[''] before:absolute before:-left-1 before:top-1/2 before:-translate-y-1/2 before:border-4 before:border-transparent before:border-r-white">
+                เล่นเกมรับส่วนลด!
+            </div>
+        </div>
+    </a>
 
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        
-        // Resize Canvas to fit screen
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-
-        // Game State Variables
-        let gameLoop;
-        let isPlaying = false;
-        let score = 0;
-        let lives = 3;
-        const targetScore = 500;
-
-        // Player (Wok)
-        const player = {
-            x: canvas.width / 2,
-            y: canvas.height - 100,
-            width: 80,
-            height: 50,
-            speed: 0,
-            emoji: '🥘'
-        };
-
-        // Items Array
-        let items = [];
-        const itemTypes = [
-            { emoji: '🥩', type: 'good', points: 20 },
-            { emoji: '🌿', type: 'good', points: 15 },
-            { emoji: '🌶️', type: 'good', points: 30 },
-            { emoji: '🪲', type: 'bad', damage: 1 },
-            { emoji: '🗑️', type: 'bad', damage: 1 }
+        // Data Structure for Menus (อัปเดตลิงก์รูปภาพใหม่)
+        const menus = [
+            // Classic
+            { id: 1, name: "กะเพราวากิวไข่ดาวกรอบ", price: 189, category: "classic", image: "https://images.unsplash.com/photo-1559314809-0d155014e29e?auto=format&fit=crop&q=80&w=800", ingredients: "เนื้อวากิวสับ, ใบกะเพราป่า, พริกแห้ง, กระเทียม, ไข่เป็ด", nutrition: { cal: 650, p: 45, c: 50, f: 28 }, badge: "Best Seller" },
+            { id: 2, name: "หมูคุโรบูตะกระเทียมพริกไทย", price: 149, category: "classic", image: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&q=80&w=800", ingredients: "หมูคุโรบูตะ, กระเทียมเจียว, พริกไทยดำ, ซอสปรุงรสสูตรพิเศษ", nutrition: { cal: 580, p: 38, c: 45, f: 25 }, badge: null },
+            { id: 3, name: "ข้าวผัดปูจัมโบ้", price: 229, category: "classic", image: "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&q=80&w=800", ingredients: "กรรเชียงปูม้า, ข้าวหอมมะลิเก่า, ไข่ไก่, ต้นหอม", nutrition: { cal: 520, p: 35, c: 60, f: 15 }, badge: "Premium" },
+            { id: 4, name: "สุกี้แห้งทะเลศรีราชา", price: 159, category: "classic", image: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&q=80&w=800", ingredients: "กุ้ง, ปลาหมึก, วุ้นเส้น, ผักกาดขาว, น้ำจิ้มสุกี้สูตรศรีราชา", nutrition: { cal: 480, p: 30, c: 55, f: 12 }, badge: null },
+            
+            // Fit & Firm
+            { id: 5, name: "กะเพราอกไก่คีนัว", price: 129, category: "fit", image: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&q=80&w=800", ingredients: "อกไก่ลอกหนัง, คีนัวออร์แกนิค, ใบกะเพรา, พริกสด, น้ำมันมะกอก", nutrition: { cal: 380, p: 42, c: 35, f: 8 }, badge: "Low Cal" },
+            { id: 6, name: "แซลมอนเทอริยากิข้าวกล้อง", price: 249, category: "fit", image: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&q=80&w=800", ingredients: "ปลาแซลมอนนอร์เวย์, ข้าวกล้องไรซ์เบอร์รี่, บร็อคโคลี่, ซอสเทอริยากิโซเดียมต่ำ", nutrition: { cal: 450, p: 38, c: 40, f: 16 }, badge: "High Protein" },
+            { id: 7, name: "เต้าหู้เห็ดรวมผัดซอสเห็ดหอม", price: 119, category: "fit", image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800", ingredients: "เต้าหู้แข็ง, เห็ดชิเมจิ, เห็ดออรินจิ, ซอสเห็ดหอม", nutrition: { cal: 310, p: 18, c: 30, f: 12 }, badge: "Vegan" },
+            { id: 8, name: "เนื้อสับผัดบร็อคโคลี่ลีน", price: 169, category: "fit", image: "https://images.unsplash.com/photo-1600891964092-4316c288032e?auto=format&fit=crop&q=80&w=800", ingredients: "เนื้อวัวลีนสับ, บร็อคโคลี่, กระเทียม, ซีอิ๊วลดโซเดียม", nutrition: { cal: 410, p: 40, c: 20, f: 18 }, badge: null },
+            
+            // Fusion
+            { id: 9, name: "สปาเก็ตตี้ต้มยำทะเลแห้ง", price: 179, category: "fusion", image: "https://images.unsplash.com/photo-1556761223-4c4282c73f77?auto=format&fit=crop&q=80&w=800", ingredients: "เส้นสปาเก็ตตี้, กุ้ง, ปลาหมึก, เครื่องต้มยำ, นมข้นจืด", nutrition: { cal: 550, p: 32, c: 65, f: 18 }, badge: "Signature" },
+            { id: 10, name: "หมูสามชั้นผัดซอสหม่าล่า", price: 159, category: "fusion", image: "https://images.unsplash.com/photo-1544025162-8366fd06aca1?auto=format&fit=crop&q=80&w=800", ingredients: "หมูสามชั้นสไลด์, พริกหม่าล่า, ต้นหอมญี่ปุ่น, งาขาว", nutrition: { cal: 680, p: 25, c: 30, f: 45 }, badge: "Spicy!" },
+            { id: 11, name: "ข้าวผัดแกงเขียวหวานไก่กรอบ", price: 149, category: "fusion", image: "https://images.unsplash.com/photo-1565557623262-b51c2513a641?auto=format&fit=crop&q=80&w=800", ingredients: "ข้าวหอมมะลิ, พริกแกงเขียวหวาน, ไก่ทอดกรอบ, โหระพา", nutrition: { cal: 620, p: 35, c: 55, f: 28 }, badge: null },
+            { id: 12, name: "กะเพราเบคอนทรัฟเฟิล", price: 199, category: "fusion", image: "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?auto=format&fit=crop&q=80&w=800", ingredients: "เบคอนรมควัน, ใบกะเพรา, น้ำมันเห็ดทรัฟเฟิล, พริกแห้ง", nutrition: { cal: 710, p: 22, c: 40, f: 52 }, badge: "Chef Recommends" }
         ];
 
-        // Input handling (Touch & Mouse)
-        let targetX = canvas.width / 2;
-        
-        function updatePlayerPosition(e) {
-            if (!isPlaying) return;
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            targetX = clientX;
+        let cart = [];
+        let discountRate = 0; // 0.15 for 15% off, etc.
+        let discountAmount = 0;
+        let isPromoApplied = false;
+
+        // Fallback Image URL Generator (เปลี่ยนรูปสำรองให้เป็นรูปอาหารมาตรฐานแทนภาพสีพื้น)
+        const getFallbackImg = () => "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=800";
+
+        // Render Menu Cards
+
+        function saveCart() {
+            localStorage.setItem('wokify_cart', JSON.stringify(cart));
+            localStorage.setItem('wokify_promo', isPromoApplied.toString());
         }
 
-        window.addEventListener('mousemove', updatePlayerPosition);
-        window.addEventListener('touchmove', updatePlayerPosition, {passive: false});
-
-        function spawnItem() {
-            if (!isPlaying) return;
-            
-            // Spawn rate gets slightly faster based on score
-            const spawnRate = Math.max(800 - (score * 1.5), 300); 
-            
-            const randomType = itemTypes[Math.floor(Math.random() * itemTypes.length)];
-            const size = 40;
-            items.push({
-                x: Math.random() * (canvas.width - size),
-                y: -50,
-                size: size,
-                data: randomType,
-                speed: Math.random() * 3 + 2 + (score/200) // Speed increases slightly
-            });
-
-            setTimeout(spawnItem, spawnRate);
-        }
-
-        function update() {
-            if (!isPlaying) return;
-
-            // Smooth player movement
-            player.x += (targetX - player.x) * 0.15;
-            
-            // Boundary constraints
-            if (player.x < player.width/2) player.x = player.width/2;
-            if (player.x > canvas.width - player.width/2) player.x = canvas.width - player.width/2;
-
-            // Update Items
-            for (let i = items.length - 1; i >= 0; i--) {
-                const item = items[i];
-                item.y += item.speed;
-
-                // Collision Detection (Circle vs Rect approx)
-                const hitboxY = player.y - 20; // Top rim of the wok
-                if (item.y + item.size/2 > hitboxY && item.y < player.y + player.height) {
-                    if (Math.abs(item.x - player.x) < player.width / 1.5) {
-                        // Caught!
-                        if (item.data.type === 'good') {
-                            score += item.data.points;
-                            createParticles(item.x, item.y, '#8ACB88');
-                        } else {
-                            lives -= item.data.damage;
-                            createParticles(item.x, item.y, '#EF4444');
-                            // Shake effect on canvas
-                            canvas.style.transform = `translate(${Math.random()*10-5}px, ${Math.random()*10-5}px)`;
-                            setTimeout(() => canvas.style.transform = 'none', 100);
-                        }
-                        items.splice(i, 1);
-                        updateUI();
-                        checkWinLoss();
-                        continue;
+        function loadCart() {
+            const savedCart = localStorage.getItem('wokify_cart');
+            if (savedCart) {
+                cart = JSON.parse(savedCart);
+                isPromoApplied = localStorage.getItem('wokify_promo') === 'true';
+                if (isPromoApplied) {
+                    const input = document.getElementById('promoInput');
+                    const msg = document.getElementById('promoMessage');
+                    if (input) input.value = 'WOKWIN50';
+                    if (msg) {
+                        msg.innerText = "ใช้โค้ดสำเร็จ! รับส่วนลด ฿50";
+                        msg.className = "text-xs mt-1 text-accent block";
                     }
                 }
+                updateCartUI();
+            }
+        }
 
-                // Remove if out of bounds
-                if (item.y > canvas.height) {
-                    items.splice(i, 1);
+        function renderMenu(filter = 'all') {
+            const grid = document.getElementById('menuGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                if (btn.dataset.filter === filter) {
+                    btn.setAttribute('data-active', 'true');
+                } else {
+                    btn.removeAttribute('data-active');
                 }
-            }
-        }
-
-        // Simple Particle System for visual feedback
-        let particles = [];
-        function createParticles(x, y, color) {
-            for(let i=0; i<5; i++) {
-                particles.push({
-                    x: x, y: y,
-                    vx: (Math.random() - 0.5) * 10,
-                    vy: (Math.random() - 0.5) * 10,
-                    life: 1,
-                    color: color
-                });
-            }
-        }
-
-        function draw() {
-            // Clear Canvas
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw subtle background grid or effects (optional, keeping it simple for perf)
-            
-            // Draw Particles
-            for (let i = particles.length - 1; i >= 0; i--) {
-                const p = particles[i];
-                ctx.globalAlpha = p.life;
-                ctx.fillStyle = p.color;
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, 5, 0, Math.PI*2);
-                ctx.fill();
-                p.x += p.vx;
-                p.y += p.vy;
-                p.life -= 0.05;
-                if(p.life <= 0) particles.splice(i, 1);
-            }
-            ctx.globalAlpha = 1;
-
-            // Draw Items
-            ctx.font = '40px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            items.forEach(item => {
-                ctx.fillText(item.data.emoji, item.x, item.y);
             });
 
-            // Draw Player (Wok)
-            ctx.font = '60px sans-serif';
-            ctx.fillText(player.emoji, player.x, player.y);
+            const filteredMenus = filter === 'all' ? menus : menus.filter(m => m.category === filter);
+
+            filteredMenus.forEach(item => {
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow duration-300 border border-gray-100 group flex flex-col";
+                
+                const badgeHtml = item.badge ? `<div class="absolute top-4 right-4 bg-primary text-white text-xs font-bold px-3 py-1 rounded-full shadow-md z-10">${item.badge}</div>` : '';
+
+                card.innerHTML = `
+                    <div class="relative h-56 overflow-hidden">
+                        ${badgeHtml}
+                        <img src="${item.image}" alt="${item.name}" onerror="this.onerror=null; this.src='${getFallbackImg()}';" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                    </div>
+                    <div class="p-5 flex flex-col flex-grow">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="text-xl font-bold text-secondary line-clamp-1">${item.name}</h3>
+                            <span class="text-primary font-bold text-lg whitespace-nowrap ml-2">฿${item.price}</span>
+                        </div>
+                        <p class="text-sm text-gray-500 mb-4 line-clamp-2 h-10">${item.ingredients}</p>
+                        
+                        <div class="grid grid-cols-4 gap-2 mb-5 mt-auto">
+                            <div class="bg-gray-50 rounded-lg p-2 text-center border border-gray-100">
+                                <div class="text-[10px] text-gray-400 uppercase font-semibold">Cal</div>
+                                <div class="text-xs font-bold text-secondary">${item.nutrition.cal}</div>
+                            </div>
+                            <div class="bg-blue-50 rounded-lg p-2 text-center border border-blue-100">
+                                <div class="text-[10px] text-blue-400 uppercase font-semibold">Pro</div>
+                                <div class="text-xs font-bold text-blue-700">${item.nutrition.p}g</div>
+                            </div>
+                            <div class="bg-yellow-50 rounded-lg p-2 text-center border border-yellow-100">
+                                <div class="text-[10px] text-yellow-500 uppercase font-semibold">Carb</div>
+                                <div class="text-xs font-bold text-yellow-700">${item.nutrition.c}g</div>
+                            </div>
+                            <div class="bg-red-50 rounded-lg p-2 text-center border border-red-100">
+                                <div class="text-[10px] text-red-400 uppercase font-semibold">Fat</div>
+                                <div class="text-xs font-bold text-red-700">${item.nutrition.f}g</div>
+                            </div>
+                        </div>
+                        
+                        <button onclick="addToCart(${item.id})" class="w-full bg-secondary hover:bg-black text-white font-medium py-2.5 rounded-xl transition flex items-center justify-center gap-2">
+                            <i class="ph ph-plus-circle text-lg"></i> เพิ่มลงตะกร้า
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
         }
 
-        function loop() {
-            update();
-            draw();
-            if(isPlaying) requestAnimationFrame(loop);
-        }
+        function toggleCart() {
+            const sidebar = document.getElementById('cartSidebar');
+            const overlay = document.getElementById('cartOverlay');
+            if (!sidebar || !overlay) return;
 
-        function updateUI() {
-            document.getElementById('scoreUI').innerText = score;
-            let heartStr = '';
-            for(let i=0; i<lives; i++) heartStr += '❤️';
-            document.getElementById('livesUI').innerText = heartStr || '💔';
-        }
-
-        function checkWinLoss() {
-            if (lives <= 0) {
-                isPlaying = false;
-                document.getElementById('gameOverScreen').style.display = 'flex';
-            } else if (score >= targetScore) {
-                isPlaying = false;
-                score = targetScore; // Cap UI
-                updateUI();
-                document.getElementById('winScreen').style.display = 'flex';
-                shootConfetti(); // Optional extra flair
+            if (sidebar.classList.contains('translate-x-full')) {
+                sidebar.classList.remove('translate-x-full');
+                overlay.classList.remove('hidden');
+                setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+            } else {
+                sidebar.classList.add('translate-x-full');
+                overlay.classList.add('opacity-0');
+                setTimeout(() => overlay.classList.add('hidden'), 300);
             }
         }
 
-        function startGame() {
-            document.getElementById('startScreen').style.display = 'none';
-            player.y = canvas.height - 100;
-            isPlaying = true;
-            score = 0;
-            lives = 3;
-            items = [];
-            particles = [];
-            updateUI();
-            spawnItem();
-            loop();
-        }
-
-        function resetGame() {
-            document.getElementById('gameOverScreen').style.display = 'none';
-            startGame();
-        }
-
-        function copyCode() {
-            const code = document.getElementById('promoCode').innerText;
-            // Fake clipboard copy since iFrame restrictions might block real clipboard API
-            const dummy = document.createElement("textarea");
-            document.body.appendChild(dummy);
-            dummy.value = code;
-            dummy.select();
-            document.execCommand("copy");
-            document.body.removeChild(dummy);
+        function addToCart(id) {
+            const item = menus.find(m => m.id === id);
+            const existing = cart.find(c => c.id === id);
             
-            const msg = document.getElementById('copyMsg');
-            msg.style.opacity = '1';
-            setTimeout(() => { msg.style.opacity = '0'; }, 2000);
+            if (existing) {
+                existing.qty += 1;
+            } else {
+                cart.push({ ...item, qty: 1, note: "" });
+            }
+            
+            saveCart();
+            updateCartUI();
+            
+            const badge = document.getElementById('cartBadge');
+            if (badge) {
+                badge.classList.add('scale-150');
+                setTimeout(() => badge.classList.remove('scale-150'), 200);
+            }
         }
 
-        // Simple Confetti effect for Win Screen (pure canvas)
-        function shootConfetti() {
-            for(let i=0; i<50; i++) {
-                particles.push({
-                    x: canvas.width/2, y: canvas.height/2,
-                    vx: (Math.random() - 0.5) * 20,
-                    vy: (Math.random() - 1) * 20,
-                    life: 1 + Math.random(),
-                    color: ['#FF6B35', '#8ACB88', '#FFD166', '#EF476F'][Math.floor(Math.random()*4)]
+        function updateQty(id, delta) {
+            const item = cart.find(c => c.id === id);
+            if (item) {
+                item.qty += delta;
+                if (item.qty <= 0) {
+                    cart = cart.filter(c => c.id !== id);
+                }
+                saveCart();
+                updateCartUI();
+            }
+        }
+
+        function updateNote(id, val) {
+            const item = cart.find(c => c.id === id);
+            if (item) {
+                item.note = val;
+                saveCart();
+            }
+        }
+
+        function clearCartConfirm() {
+            if (confirm("คุณต้องการล้างตะกร้าทั้งหมดใช่หรือไม่?")) {
+                cart = [];
+                isPromoApplied = false;
+                const promoInput = document.getElementById('promoInput');
+                if (promoInput) promoInput.value = '';
+                const promoMsg = document.getElementById('promoMessage');
+                if (promoMsg) promoMsg.classList.add('hidden');
+                saveCart();
+                updateCartUI();
+            }
+        }
+
+        function updateCartUI() {
+            const cartItemsEl = document.getElementById('cartItems');
+            const emptyCartEl = document.getElementById('emptyCart');
+            const badge = document.getElementById('cartBadge');
+            const checkoutBtn = document.getElementById('checkoutBtn');
+            const clearBtn = document.getElementById('clearCartBtn');
+            
+            if (!cartItemsEl) return;
+            cartItemsEl.innerHTML = '';
+            
+            let subtotal = 0;
+            let totalQty = 0;
+
+            if (cart.length === 0) {
+                if (emptyCartEl) cartItemsEl.appendChild(emptyCartEl);
+                if (emptyCartEl) emptyCartEl.classList.remove('hidden');
+                if (badge) badge.classList.add('hidden');
+                if (clearBtn) clearBtn.classList.add('hidden');
+                if (checkoutBtn) checkoutBtn.disabled = true;
+                
+                isPromoApplied = false;
+                const promoInput = document.getElementById('promoInput');
+                if (promoInput) promoInput.value = '';
+                const promoMsg = document.getElementById('promoMessage');
+                if (promoMsg) promoMsg.classList.add('hidden');
+                saveCart();
+            } else {
+                if (emptyCartEl) emptyCartEl.classList.add('hidden');
+                if (badge) badge.classList.remove('hidden');
+                if (clearBtn) clearBtn.classList.remove('hidden');
+                if (checkoutBtn) checkoutBtn.disabled = false;
+                
+                cart.forEach(item => {
+                    subtotal += item.price * item.qty;
+                    totalQty += item.qty;
+                    
+                    const el = document.createElement('div');
+                    el.className = "bg-white p-3 rounded-xl border border-gray-200 shadow-sm transition-all hover:shadow-md";
+                    el.innerHTML = `
+                        <div class="flex gap-3 mb-3">
+                            <img src="${item.image}" onerror="this.onerror=null; this.src='${getFallbackImg()}';" class="w-16 h-16 object-cover rounded-lg border border-gray-100">
+                            <div class="flex-1 flex flex-col justify-between">
+                                <div class="flex justify-between items-start gap-2">
+                                    <h4 class="text-sm font-bold text-secondary leading-tight line-clamp-2">${item.name}</h4>
+                                    <button onclick="updateQty(${item.id}, -${item.qty})" class="text-gray-300 hover:text-red-500 bg-gray-50 hover:bg-red-50 p-1 rounded-md transition shrink-0" title="ลบรายการนี้"><i class="ph ph-trash"></i></button>
+                                </div>
+                                <div class="flex justify-between items-center mt-2">
+                                    <span class="text-primary font-bold text-sm">฿${item.price * item.qty}</span>
+                                    <div class="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+                                        <button onclick="updateQty(${item.id}, -1)" class="w-6 h-6 flex items-center justify-center bg-white rounded shadow-sm text-gray-500 hover:text-secondary"><i class="ph ph-minus text-xs"></i></button>
+                                        <span class="text-xs font-bold w-6 text-center">${item.qty}</span>
+                                        <button onclick="updateQty(${item.id}, 1)" class="w-6 h-6 flex items-center justify-center bg-white rounded shadow-sm text-gray-500 hover:text-secondary"><i class="ph ph-plus text-xs"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                                <i class="ph ph-note-pencil text-gray-400"></i>
+                            </div>
+                            <input type="text" placeholder="ระบุเพิ่มเติม เช่น ไม่เผ็ด, พิเศษข้าว..." value="${item.note || ''}" onchange="updateNote(${item.id}, this.value)" class="w-full text-xs border border-gray-200 rounded-lg pl-7 pr-2 py-2 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary text-gray-600 bg-gray-50 placeholder-gray-400">
+                        </div>
+                    `;
+                    cartItemsEl.appendChild(el);
                 });
             }
-            if(!isPlaying) { // If loop stopped, start a temporary one for confetti
-                function confettiloop() {
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    for (let i = particles.length - 1; i >= 0; i--) {
-                        const p = particles[i];
-                        ctx.globalAlpha = p.life > 1 ? 1 : p.life;
-                        ctx.fillStyle = p.color;
-                        ctx.fillRect(p.x, p.y, 8, 8);
-                        p.x += p.vx;
-                        p.y += p.vy;
-                        p.vy += 0.5; // gravity
-                        p.life -= 0.02;
-                        if(p.life <= 0) particles.splice(i, 1);
-                    }
-                    if(particles.length > 0) requestAnimationFrame(confettiloop);
-                    else ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (badge) badge.innerText = totalQty;
+            const subtotalEl = document.getElementById('cartSubtotal');
+            if (subtotalEl) subtotalEl.innerText = `฿${subtotal}`;
+            
+            discountAmount = 0;
+            const discountRow = document.getElementById('discountRow');
+            const cartDiscountEl = document.getElementById('cartDiscount');
+            
+            if (isPromoApplied && subtotal > 0) {
+                discountAmount = 50; 
+                if (discountAmount > subtotal) discountAmount = subtotal; 
+                if (cartDiscountEl) cartDiscountEl.innerText = `-฿${discountAmount}`;
+                if (discountRow) discountRow.classList.remove('hidden');
+            } else {
+                if (discountRow) discountRow.classList.add('hidden');
+            }
+            
+            const total = subtotal - discountAmount;
+            const cartTotalEl = document.getElementById('cartTotal');
+            if (cartTotalEl) cartTotalEl.innerText = `฿${total}`;
+        }
+
+        function applyPromo() {
+            const input = document.getElementById('promoInput');
+            const inputVal = input ? input.value.trim().toUpperCase() : '';
+            const msg = document.getElementById('promoMessage');
+            
+            if (cart.length === 0) return;
+
+            if (inputVal === 'WOKWIN50') {
+                isPromoApplied = true;
+                if (msg) {
+                    msg.innerText = "ใช้โค้ดสำเร็จ! รับส่วนลด ฿50";
+                    msg.className = "text-xs mt-1 text-accent block";
                 }
-                confettiloop();
+            } else {
+                isPromoApplied = false;
+                if (msg) {
+                    msg.innerText = "โค้ดไม่ถูกต้อง หรือหมดอายุแล้ว";
+                    msg.className = "text-xs mt-1 text-red-500 block";
+                }
+            }
+            saveCart();
+            updateCartUI();
+        }
+
+        function checkout() {
+            if (cart.length === 0) return;
+            toggleCart();
+            
+            const orderNum = Math.floor(100000 + Math.random() * 900000);
+            const orderNumEl = document.getElementById('orderNumber');
+            if (orderNumEl) orderNumEl.innerText = `WOK-${orderNum}`;
+            
+            const receiptItems = document.getElementById('receiptItems');
+            if (receiptItems) receiptItems.innerHTML = '';
+            
+            let subtotal = 0;
+            cart.forEach(item => {
+                subtotal += item.price * item.qty;
+                const noteHtml = item.note ? `<div class="text-xs text-gray-400 mt-0.5 ml-4 flex items-start"><i class="ph ph-arrow-elbow-down-right mr-1 mt-0.5"></i> ${item.note}</div>` : '';
+                
+                if (receiptItems) {
+                    receiptItems.innerHTML += `
+                        <div class="mb-3">
+                            <div class="flex justify-between items-start">
+                                <span class="font-medium text-secondary">
+                                    <span class="text-primary mr-1">${item.qty}x</span> ${item.name}
+                                </span>
+                                <span class="font-medium">฿${item.price * item.qty}</span>
+                            </div>
+                            ${noteHtml}
+                        </div>
+                    `;
+                }
+            });
+            
+            const receiptSubtotalEl = document.getElementById('receiptSubtotal');
+            if (receiptSubtotalEl) receiptSubtotalEl.innerText = `฿${subtotal}`;
+            
+            const rDiscountRow = document.getElementById('receiptDiscountRow');
+            const receiptDiscountEl = document.getElementById('receiptDiscount');
+            if (discountAmount > 0) {
+                if (receiptDiscountEl) receiptDiscountEl.innerText = `-฿${discountAmount}`;
+                if (rDiscountRow) rDiscountRow.classList.remove('hidden');
+            } else {
+                if (rDiscountRow) rDiscountRow.classList.add('hidden');
+            }
+            
+            const receiptTotalEl = document.getElementById('receiptTotal');
+            if (receiptTotalEl) receiptTotalEl.innerText = `฿${subtotal - discountAmount}`;
+            
+            openModal('receiptModal');
+        }
+
+        function resetCart() {
+            cart = [];
+            isPromoApplied = false;
+            const promoInput = document.getElementById('promoInput');
+            if (promoInput) promoInput.value = '';
+            const promoMsg = document.getElementById('promoMessage');
+            if (promoMsg) promoMsg.classList.add('hidden');
+            saveCart();
+            updateCartUI();
+        }
+
+        function openModal(id) {
+            const modal = document.getElementById(id);
+            if (!modal) return;
+            const content = modal.querySelector('.modal-enter');
+            modal.classList.remove('hidden');
+            void modal.offsetWidth;
+            if (content) content.classList.add('modal-enter-active');
+        }
+
+        function closeModal(id) {
+            const modal = document.getElementById(id);
+            if (!modal) return;
+            const content = modal.querySelector('.modal-enter');
+            if (content) {
+                content.classList.remove('modal-enter-active');
+                content.classList.add('modal-exit-active');
+            }
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                if (content) content.classList.remove('modal-exit-active');
+                if (id === 'aiModal') {
+                    const aiResult = document.getElementById('aiResult');
+                    if (aiResult) aiResult.classList.add('hidden');
+                }
+            }, 200);
+        }
+
+        function toggleModal(id) {
+            const modal = document.getElementById(id);
+            if (!modal) return;
+            if (modal.classList.contains('hidden')) {
+                openModal(id);
+            } else {
+                closeModal(id);
             }
         }
+
+        function askAI(preference) {
+            let targetMenu;
+            let reason;
+
+            switch(preference) {
+                case 'health':
+                    targetMenu = menus.find(m => m.id === 5);
+                    reason = "💡 เมนูนี้มีโปรตีนสูง คาร์โบไฮเดรตเชิงซ้อน แคลอรีเพียง 380 Kcal เหมาะกับสายฟิตสุดๆ ครับ!";
+                    break;
+                case 'spicy':
+                    targetMenu = menus.find(m => m.id === 10);
+                    reason = "🔥 เผ็ดชาสะใจ! หมูสามชั้นนุ่มๆ ผัดกับซอสหม่าล่าเข้มข้น รับรองว่าตื่นแน่นอนครับ!";
+                    break;
+                case 'fusion':
+                    targetMenu = menus.find(m => m.id === 12);
+                    reason = "✨ ผสมผสานความหอมของทรัฟเฟิลและความจัดจ้านของกะเพรา เมนูพิเศษที่อยากให้ลองครับ!";
+                    break;
+            }
+
+            const resultContainer = document.getElementById('aiResult');
+            const aiReason = document.getElementById('aiReason');
+            if (aiReason) aiReason.innerText = reason;
+            
+            const card = document.getElementById('aiMenuCard');
+            if (card && targetMenu) {
+                card.innerHTML = `
+                    <img src="${targetMenu.image}" onerror="this.onerror=null; this.src='${getFallbackImg()}';" class="w-20 h-20 object-cover rounded-md">
+                    <div class="flex-1">
+                        <h4 class="font-bold text-secondary text-sm">${targetMenu.name}</h4>
+                        <p class="text-primary font-bold text-sm">฿${targetMenu.price}</p>
+                    </div>
+                    <button onclick="addToCart(${targetMenu.id}); closeModal('aiModal'); setTimeout(toggleCart, 300);" class="bg-primary hover:bg-orange-600 text-white p-2 rounded-lg transition shadow-md">
+                        <i class="ph ph-plus font-bold"></i>
+                    </button>
+                `;
+            }
+            
+            if (resultContainer) resultContainer.classList.remove('hidden');
+        }
+
+        window.onload = () => {
+            renderMenu('all');
+            loadCart();
+        };
     </script>
 </body>
 </html>
