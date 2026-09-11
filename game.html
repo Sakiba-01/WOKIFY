@@ -29,9 +29,9 @@
 </head>
 <body class="font-sans text-white select-none">
 
-    <!-- Header UI -->
+    <!-- Header UI (ชี้กลับไปที่ index.html) -->
     <div class="fixed top-0 left-0 w-full p-4 flex justify-between items-center z-10 pointer-events-none">
-        <a href="wokify.html" class="pointer-events-auto bg-white text-secondary hover:bg-primary hover:text-white shadow-[0_4px_15px_rgba(0,0,0,0.3)] px-4 py-2 rounded-full flex items-center text-sm font-bold transition-all transform hover:scale-105 border-2 border-transparent">
+        <a href="index.html" class="pointer-events-auto bg-white text-secondary hover:bg-primary hover:text-white shadow-[0_4px_15px_rgba(0,0,0,0.3)] px-4 py-2 rounded-full flex items-center text-sm font-bold transition-all transform hover:scale-105 border-2 border-transparent">
             <i class="ph-bold ph-arrow-left mr-2"></i> กลับหน้าร้าน
         </a>
         <div class="flex gap-4 bg-black/40 backdrop-blur-md px-5 py-2 rounded-full border border-white/10">
@@ -78,7 +78,7 @@
             <p id="copyMsg" class="text-accent text-xs mt-2 font-semibold opacity-0 transition-opacity">คัดลอกโค้ดแล้ว!</p>
         </div>
 
-        <a href="wokify.html" class="bg-primary hover:bg-orange-500 text-white font-bold py-3 px-8 rounded-full transition flex items-center gap-2">
+        <a href="index.html" class="bg-primary hover:bg-orange-500 text-white font-bold py-3 px-8 rounded-full transition flex items-center gap-2">
             <i class="ph ph-shopping-bag text-xl"></i> นำโค้ดไปใช้สั่งอาหาร
         </a>
     </div>
@@ -90,7 +90,6 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         
-        // Resize Canvas to fit screen
         function resizeCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
@@ -98,14 +97,12 @@
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        // Game State Variables
         let gameLoop;
         let isPlaying = false;
         let score = 0;
         let lives = 3;
         const targetScore = 500;
 
-        // Player (Wok)
         const player = {
             x: canvas.width / 2,
             y: canvas.height - 100,
@@ -115,7 +112,6 @@
             emoji: '🥘'
         };
 
-        // Items Array
         let items = [];
         const itemTypes = [
             { emoji: '🥩', type: 'good', points: 20 },
@@ -125,7 +121,6 @@
             { emoji: '🗑️', type: 'bad', damage: 1 }
         ];
 
-        // Input handling (Touch & Mouse)
         let targetX = canvas.width / 2;
         
         function updatePlayerPosition(e) {
@@ -140,7 +135,6 @@
         function spawnItem() {
             if (!isPlaying) return;
             
-            // Spawn rate gets slightly faster based on score
             const spawnRate = Math.max(800 - (score * 1.5), 300); 
             
             const randomType = itemTypes[Math.floor(Math.random() * itemTypes.length)];
@@ -150,7 +144,7 @@
                 y: -50,
                 size: size,
                 data: randomType,
-                speed: Math.random() * 3 + 2 + (score/200) // Speed increases slightly
+                speed: Math.random() * 3 + 2 + (score/200)
             });
 
             setTimeout(spawnItem, spawnRate);
@@ -159,30 +153,24 @@
         function update() {
             if (!isPlaying) return;
 
-            // Smooth player movement
             player.x += (targetX - player.x) * 0.15;
             
-            // Boundary constraints
             if (player.x < player.width/2) player.x = player.width/2;
             if (player.x > canvas.width - player.width/2) player.x = canvas.width - player.width/2;
 
-            // Update Items
             for (let i = items.length - 1; i >= 0; i--) {
                 const item = items[i];
                 item.y += item.speed;
 
-                // Collision Detection (Circle vs Rect approx)
-                const hitboxY = player.y - 20; // Top rim of the wok
+                const hitboxY = player.y - 20;
                 if (item.y + item.size/2 > hitboxY && item.y < player.y + player.height) {
                     if (Math.abs(item.x - player.x) < player.width / 1.5) {
-                        // Caught!
                         if (item.data.type === 'good') {
                             score += item.data.points;
                             createParticles(item.x, item.y, '#8ACB88');
                         } else {
                             lives -= item.data.damage;
                             createParticles(item.x, item.y, '#EF4444');
-                            // Shake effect on canvas
                             canvas.style.transform = `translate(${Math.random()*10-5}px, ${Math.random()*10-5}px)`;
                             setTimeout(() => canvas.style.transform = 'none', 100);
                         }
@@ -193,14 +181,12 @@
                     }
                 }
 
-                // Remove if out of bounds
                 if (item.y > canvas.height) {
                     items.splice(i, 1);
                 }
             }
         }
 
-        // Simple Particle System for visual feedback
         let particles = [];
         function createParticles(x, y, color) {
             for(let i=0; i<5; i++) {
@@ -215,12 +201,8 @@
         }
 
         function draw() {
-            // Clear Canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Draw subtle background grid or effects (optional, keeping it simple for perf)
-            
-            // Draw Particles
             for (let i = particles.length - 1; i >= 0; i--) {
                 const p = particles[i];
                 ctx.globalAlpha = p.life;
@@ -235,7 +217,6 @@
             }
             ctx.globalAlpha = 1;
 
-            // Draw Items
             ctx.font = '40px sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
@@ -243,7 +224,6 @@
                 ctx.fillText(item.data.emoji, item.x, item.y);
             });
 
-            // Draw Player (Wok)
             ctx.font = '60px sans-serif';
             ctx.fillText(player.emoji, player.x, player.y);
         }
@@ -267,10 +247,10 @@
                 document.getElementById('gameOverScreen').style.display = 'flex';
             } else if (score >= targetScore) {
                 isPlaying = false;
-                score = targetScore; // Cap UI
+                score = targetScore;
                 updateUI();
                 document.getElementById('winScreen').style.display = 'flex';
-                shootConfetti(); // Optional extra flair
+                shootConfetti();
             }
         }
 
@@ -294,7 +274,6 @@
 
         function copyCode() {
             const code = document.getElementById('promoCode').innerText;
-            // Fake clipboard copy since iFrame restrictions might block real clipboard API
             const dummy = document.createElement("textarea");
             document.body.appendChild(dummy);
             dummy.value = code;
@@ -307,7 +286,6 @@
             setTimeout(() => { msg.style.opacity = '0'; }, 2000);
         }
 
-        // Simple Confetti effect for Win Screen (pure canvas)
         function shootConfetti() {
             for(let i=0; i<50; i++) {
                 particles.push({
@@ -318,7 +296,7 @@
                     color: ['#FF6B35', '#8ACB88', '#FFD166', '#EF476F'][Math.floor(Math.random()*4)]
                 });
             }
-            if(!isPlaying) { // If loop stopped, start a temporary one for confetti
+            if(!isPlaying) {
                 function confettiloop() {
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
                     for (let i = particles.length - 1; i >= 0; i--) {
@@ -328,7 +306,7 @@
                         ctx.fillRect(p.x, p.y, 8, 8);
                         p.x += p.vx;
                         p.y += p.vy;
-                        p.vy += 0.5; // gravity
+                        p.vy += 0.5;
                         p.life -= 0.02;
                         if(p.life <= 0) particles.splice(i, 1);
                     }
