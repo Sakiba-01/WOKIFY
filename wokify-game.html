@@ -29,7 +29,7 @@
 </head>
 <body class="font-sans text-white select-none">
 
-    <!-- Header UI (ชี้กลับไปที่ index.html) -->
+    <!-- Header UI (ชี้กลับไปที่ index.html เพื่อรองรับ GitHub Pages) -->
     <div class="fixed top-0 left-0 w-full p-4 flex justify-between items-center z-10 pointer-events-none">
         <a href="index.html" class="pointer-events-auto bg-white text-secondary hover:bg-primary hover:text-white shadow-[0_4px_15px_rgba(0,0,0,0.3)] px-4 py-2 rounded-full flex items-center text-sm font-bold transition-all transform hover:scale-105 border-2 border-transparent">
             <i class="ph-bold ph-arrow-left mr-2"></i> กลับหน้าร้าน
@@ -45,7 +45,7 @@
         <div class="text-6xl mb-4">🥘</div>
         <h1 class="text-4xl font-bold text-white mb-2">Wok Master</h1>
         <p class="text-gray-300 mb-6 max-w-sm">เลื่อนกระทะเพื่อรับวัตถุดิบคุณภาพ <br>เก็บให้ครบ 500 คะแนนเพื่อรับ Code ส่วนลด!<br><span class="text-red-400 text-sm">(ระวังของเสียจะทำให้เสียพลังชีวิต)</span></p>
-        <div class="flex gap-4 mb-8 text-2xl">
+        <div class="flex gap-4 mb-8 text-2xl justify-center">
             <div class="bg-white/10 p-3 rounded-xl border border-white/20 text-center"><span class="block text-accent text-sm mb-1">Good</span>🥩 🌿 🌶️</div>
             <div class="bg-white/10 p-3 rounded-xl border border-white/20 text-center"><span class="block text-red-400 text-sm mb-1">Bad</span>🪲 🗑️</div>
         </div>
@@ -57,7 +57,7 @@
         <h2 class="text-4xl font-bold text-red-500 mb-2">Game Over!</h2>
         <p class="text-gray-300 mb-6">กระทะไหม้ซะแล้ว! พยายามใหม่อีกครั้งนะ</p>
         <button onclick="resetGame()" class="bg-white text-secondary hover:bg-gray-200 font-bold py-3 px-10 rounded-full transition mb-4">เล่นอีกครั้ง</button>
-        <a href="index.html" class="text-sm text-gray-400 underline">กลับหน้าร้าน</a>
+        <a href="index.html" class="text-sm text-gray-400 underline pointer-events-auto">กลับหน้าร้าน</a>
     </div>
 
     <!-- Win Screen (Promo Code) -->
@@ -78,7 +78,7 @@
             <p id="copyMsg" class="text-accent text-xs mt-2 font-semibold opacity-0 transition-opacity">คัดลอกโค้ดแล้ว!</p>
         </div>
 
-        <a href="index.html" class="bg-primary hover:bg-orange-500 text-white font-bold py-3 px-8 rounded-full transition flex items-center gap-2">
+        <a href="index.html" class="pointer-events-auto bg-primary hover:bg-orange-500 text-white font-bold py-3 px-8 rounded-full transition flex items-center gap-2">
             <i class="ph ph-shopping-bag text-xl"></i> นำโค้ดไปใช้สั่งอาหาร
         </a>
     </div>
@@ -93,9 +93,12 @@
         function resizeCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
+            if(player) {
+                player.y = canvas.height - 100;
+            }
         }
         window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
+        
 
         let gameLoop;
         let isPlaying = false;
@@ -104,13 +107,14 @@
         const targetScore = 500;
 
         const player = {
-            x: canvas.width / 2,
-            y: canvas.height - 100,
+            x: window.innerWidth / 2,
+            y: window.innerHeight - 100,
             width: 80,
             height: 50,
             speed: 0,
             emoji: '🥘'
         };
+        resizeCanvas();
 
         let items = [];
         const itemTypes = [
@@ -249,6 +253,7 @@
                 isPlaying = false;
                 score = targetScore;
                 updateUI();
+                localStorage.setItem('wokify_promo', 'true'); // Save win state for index.html
                 document.getElementById('winScreen').style.display = 'flex';
                 shootConfetti();
             }
@@ -274,14 +279,29 @@
 
         function copyCode() {
             const code = document.getElementById('promoCode').innerText;
-            const dummy = document.createElement("textarea");
+            try {
+                navigator.clipboard.writeText(code).then(() => {
+                    showCopySuccess();
+                }).catch(() => {
+                    fallbackCopyTextToClipboard(code);
+                });
+            } catch (err) {
+                 fallbackCopyTextToClipboard(code);
+            }
+        }
+        
+        function fallbackCopyTextToClipboard(text) {
+             const dummy = document.createElement("textarea");
             document.body.appendChild(dummy);
-            dummy.value = code;
+            dummy.value = text;
             dummy.select();
             document.execCommand("copy");
             document.body.removeChild(dummy);
-            
-            const msg = document.getElementById('copyMsg');
+            showCopySuccess();
+        }
+        
+        function showCopySuccess() {
+             const msg = document.getElementById('copyMsg');
             msg.style.opacity = '1';
             setTimeout(() => { msg.style.opacity = '0'; }, 2000);
         }
